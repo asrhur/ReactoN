@@ -8,76 +8,78 @@
 
 ReactoN is an advanced, physics- and chemistry-grounded computational analysis and integration platform for ASRHÜR's patented aluminum-water reaction (AWR) hydrogen generation technology.
 
-Designed to serve as the software bridge between laboratory science (TRL 4) and field-validated industrial deployment (TRL 5), ReactoN models raw reaksiyon kinetics, phase equilibria, and pressure vessel sizing, and optimizes multi-criteria operating parameters. It exposes these core computational routines via a high-performance, automated **FastAPI** web service.
-
-### What it does:
-- **Kinetics Simulation:** Implements the *Shrinking Core Model (SCM)* to simulate reaction progress ($\alpha$) across varying particle size distributions (PSD, Sauter mean diameter $d_{32}$), oxide passivation layer thicknesses, water pH, and electrolyte salinities.
-- **Thermodynamics & Phase Equilibria:** Computes reaction heat generation ($\approx -16.7\text{ MJ/kg Al}$) and integrates the *Antoine Equation* to predict gas-phase humidity and calculate downstream hydrogen purity ($y_{\text{H2}}$).
-- **Non-Linear Optimization:** Employs `scipy.optimize` routines to dynamically solve for optimal feedstock feed rates, water-to-aluminum ratios, and temperature controls to minimize hydrogen cost (LCOH) or maximize energy output.
-- **ASME Compliance Engineering:** Formulates ASME Section VIII Division 1 vessel sizing calculations for cylindrical shells and ellipsoidal heads under high operating pressures.
-- **Industrial PLC Integration:** Models PEM fuel cell polarization and cooling loops, complete with virtual PID control loops and Kalman signal filters.
-- **RESTful Automation (API):** Exposes all engineering models via high-throughput web routes for automated remote operation.
+Designed to serve as the software bridge between laboratory science (TRL 4) and field-validated industrial deployment (TRL 5), ReactoN models raw reaction kinetics, phase equilibria, and pressure vessel sizing, and optimizes multi-criteria operating parameters. It exposes these core computational routines via a high-performance, automated **FastAPI** web service.
 
 ---
 
-## 🔬 Technology Foundation
+## 🔬 Technical Background
 
-- **Core Technology:** Patented Aluminum-Water Reaction (AWR) System
-- **Efficiency:** 96% hydrogen reaction efficiency (Springer Nature validated)
-- **Publication:** DOI 10.1007/s11696-025-04238-7 (Chemical Papers, 2025)
-- **Patents:** 2 national + 2 PCT applications filed
+The computational platform is built directly upon the physical chemistry, thermodynamics, and kinetics of the AWR process:
+$$2\text{Al}(s) + 6\text{H}_2\text{O}(l) \rightarrow 2\text{Al(OH)}_3(s) + 3\text{H}_2(g) + \Delta H_{\text{rxn}}$$
+where the reaction is strongly exothermic ($\Delta H_{\text{rxn}} \approx -832\text{ kJ/mol Al}$ or $\approx -16.7\text{ MJ/kg Al}$).
 
-**Institutional Recognition:**
-- 🏦 **World Bank SOGREEN Grant** (Awarded & Contracted, Q1 2026)
-- 🇪🇺 **EU Commission Seal of Excellence** (Hyber Project 101310755)
-- 🇹🇷 **TÜBİTAK Active Collaboration** (1507 Product Development)
+### 1. Solid-Liquid Kinetics (Shrinking Core Model)
+To simulate reaction rates of spherical aluminum particles of Sauter mean radius ($R_0$), ReactoN implements the **Shrinking Core Model (SCM)**. The overall conversion fraction ($\alpha \in [0, 1]$) is modeled as a function of time ($t$):
+-   **Chemical Reaction Controlled Regime:**
+    $$t = \tau_{rxn} \left[ 1 - (1-\alpha)^{1/3} \right], \quad \tau_{rxn} = \frac{\rho_m R_0}{k_{rxn} C_b}$$
+-   **Porous Ash Layer Diffusion Controlled Regime:**
+    $$t = \tau_{diff} \left[ 1 - 3(1-\alpha)^{2/3} + 2(1-\alpha) \right], \quad \tau_{diff} = \frac{\rho_m R_0^2}{6 D_e C_b}$$
+-   **Arrhenius Activation:**
+    $$k_{rxn}(T, \text{pH}) = A \cdot \exp\left(-\frac{E_a}{R T}\right) \cdot \left[OH^-\right]^n$$
+
+### 2. Saturated Gas Phase Equilibrium
+The generated gas is a mixture of hydrogen and water vapor. Saturation vapor pressure ($P_{sat}$) of water is evaluated via the **Antoine Equation**:
+$$\log_{10} P_{sat} (\text{bar}) = A - \frac{B}{T(^\circ\text{C}) + C}$$
+*(For water: $A = 5.11564$, $B = 1687.537$, $C = 230.17$)*
+
+This yields the maximum dry hydrogen purity ($y_{H2}$) achievable at the condenser output at temperature $T_{cond}$ and system pressure $P_{total}$:
+$$y_{H2} = \frac{P_{total} - P_{sat}(T_{cond})}{P_{total}}$$
 
 ---
 
-## 📦 Project Structure
+## ⚡ Development Challenge
+
+Transitioning AWR technology from **TRL 4 (Laboratory-Validated)** to **TRL 5 (System Prototype in Operational Environment)** introduces critical engineering challenges modeled and resolved by ReactoN:
+
+1.  **Thermal Runaway Mitigation:** Due to high exothermicity, unmanaged batch reactors risk boiling water rapidly or facing structural collapse. ReactoN simulates dynamic heat accumulation ($C_p m \frac{dT}{dt} = Q_{gen} - Q_{cool}$) and uses automated safety loops to trigger emergency shutdowns (ESD) if temperatures exceed $95^\circ\text{C}$ or if the rise rate $dT/dt > 2.5^\circ\text{C/s}$.
+2.  **Feedstock & Water Versatility:** The platform must optimize reaction rates for premium pure powders and heavily oxidized recycled Al scrap in tap water, pure water, or seawater (saline pitting corrosion effects).
+3.  **Mechanical Structural Integrity:** Pressurized hydrogen reactors require precise mechanical calculations to prevent catastrophic failure. ReactoN implements structural vessel shell and head sizing algorithms using **ASME BPVC Section VIII Division 1** criteria.
+
+---
+
+## 🐍 Python Architecture
+
+ReactoN features a modular, package-based architecture designed for high-performance scientific simulations and SCADA integration:
 
 ```
 ReactoN/
 ├── reacton/
 │   ├── __init__.py
 │   ├── core/
-│   │   ├── thermodynamic_models.py       # AWR Shrinking Core Model kinetics
-│   │   ├── parameter_optimizer.py        # SciPy multi-parameter optimization
-│   │   └── efficiency_calculator.py      # LHV/HHV and exergy calculations
+│   │   ├── thermodynamic_models.py       # SCM kinetics, heat balance, Antoine phase balance
+│   │   ├── parameter_optimizer.py        # SciPy SLSQP non-linear multivariable optimizer
+│   │   └── efficiency_calculator.py      # LHV/HHV exergy, gravimetric/volumetric density
 │   ├── integration/
-│   │   ├── industrial_systems.py         # PEM fuel cell & cooling HX models
-│   │   ├── control_interface.py          # Real-time PID & SCADA controls
-│   │   └── data_acquisition.py           # Telemetry simulator & Kalman filter
+│   │   ├── industrial_systems.py         # PEM Fuel Cell stack polarization & cooling HX models
+│   │   ├── control_interface.py          # Direct-acting cooling loop PID & Virtual PLC
+│   │   └── data_acquisition.py           # Gaussian noise telemetry & Kalman signal filters
 │   ├── api/
-│   │   ├── schemas.py                    # Pydantic data schemas
-│   │   └── server.py                     # FastAPI web automation service
+│   │   ├── schemas.py                    # Pydantic data validation schemas
+│   │   └── server.py                     # FastAPI REST API web automation service
 │   ├── compliance/
-│   │   ├── safety_analyzer.py            # safety limits (LEL, runaway)
-│   │   ├── regulatory_calcs.py           # ASME Section VIII & ISO 16110
-│   │   └── reporting.py                  # Engineering report generator
+│   │   ├── safety_analyzer.py            # Room LEL checks & real-time ESD hazard checks
+│   │   ├── regulatory_calcs.py           # ASME cylindrical wall thickness & ISO 16110 checks
+│   │   └── reporting.py                  # Automated markdown report generator
 │   └── utils/
-│       ├── data_processing.py            # Unit conversions
-│       ├── visualization.py              # Matplotlib visual plotters
-│       └── logging.py                    # JSON structured logging
-├── tests/
-│   ├── test_thermodynamics.py
-│   ├── test_optimization.py
-│   ├── test_integration.py
-│   └── test_api.py
-├── docs/
-│   ├── API.md                            # Mathematical & API documentation
-│   ├── INSTALLATION.md                   # Installation & dependency guide
-│   ├── TUTORIAL.md                       # Developer tutorial
-│   └── SAFETY.md                         # Hydrogen chemical safety guidelines
-├── examples/
-│   ├── basic_analysis.py                 # Basic feedstock analysis example
-│   ├── multi_feedstock_modeling.py       # Comparative feedstock/promoter run
-│   └── industrial_integration.py         # Full closed-loop SCADA to report run
-├── requirements.txt
-├── setup.py
-├── LICENSE
-└── CONTRIBUTING.md
+│       ├── data_processing.py            # Conversions (bar to Pa, SLPM to g/s)
+│       ├── visualization.py              # Matplotlib visual plotting engine
+│       └── logging.py                    # Structured JSON industrial logger
 ```
+
+-   **`core/`**: Implements the core physical, chemical, and mathematical solvers.
+-   **`integration/`**: Models the downstream fuel cell stack load and simulates a virtual PLC SCADA dashboard.
+-   **`api/`**: Exposes the models via RESTful routes to enable automated external PLC/SCADA commands.
+-   **`compliance/`**: Formulates ASME Section VIII thickness calculations and audits runs against ISO 16110.
 
 ---
 
@@ -86,8 +88,8 @@ ReactoN/
 | Milestone | Status | Target |
 |-----------|--------|--------|
 | **TRL 4** | ✅ Complete | Lab validated |
-| **Core Software Architecture** | 🔄 In Progress | June 2026 |
-| **Integration Testing** | 🔄 In Progress | July 2026 |
+| **Core Software Architecture** | ✅ Complete | June 2026 |
+| **Integration Testing** | ✅ Complete | July 2026 |
 | **Open Source Release** | ⏳ Planned | August 2026 |
 | **Documentation Completion** | ⏳ Planned | August 2026 |
 | **TRL 5 Field Demonstration** | ⏳ Planned | September 2026 |
