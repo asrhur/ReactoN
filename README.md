@@ -1,4 +1,4 @@
-# ReactoN — Hydrogen Generation System Analysis Platform
+# ReactoN: Computational Analysis Platform for AWR Systems
 
 **Status:** TRL 4 (Laboratory-Validated) | **Funding:** World Bank SOGREEN | **Recognition:** EU Seal of Excellence
 
@@ -12,7 +12,7 @@ Designed to serve as the software bridge between laboratory science (TRL 4) and 
 
 ---
 
-## 🔬 Technical Background
+## Technical Background
 
 The computational platform is built directly upon the physical chemistry, thermodynamics, and kinetics of the AWR process:
 $$2\text{Al}(s) + 6\text{H}_2\text{O}(l) \rightarrow 2\text{Al(OH)}_3(s) + 3\text{H}_2(g) + \Delta H_{\text{rxn}}$$
@@ -25,7 +25,7 @@ To simulate reaction rates of spherical aluminum particles of Sauter mean radius
 -   **Porous Ash Layer Diffusion Controlled Regime:**
     $$t = \tau_{diff} \left[ 1 - 3(1-\alpha)^{2/3} + 2(1-\alpha) \right], \quad \tau_{diff} = \frac{\rho_m R_0^2}{6 D_e C_b}$$
 -   **Arrhenius Activation:**
-    $$k_{rxn}(T, \text{pH}) = A \cdot \exp\left(-\frac{E_a}{R T}\right) \cdot \left[OH^-\right]^n$$
+    $$k_{rxn}(T, \text{pH}) = A \cdot \exp\left(-\frac{E_a}{R T_{rxn}}\right) \cdot \left[OH^-\right]^n$$
 
 ### 2. Saturated Gas Phase Equilibrium
 The generated gas is a mixture of hydrogen and water vapor. Saturation vapor pressure ($P_{sat}$) of water is evaluated via the **Antoine Equation**:
@@ -37,7 +37,7 @@ $$y_{H2} = \frac{P_{total} - P_{sat}(T_{cond})}{P_{total}}$$
 
 ---
 
-## ⚡ Development Challenge
+## Development Challenge
 
 Transitioning AWR technology from **TRL 4 (Laboratory-Validated)** to **TRL 5 (System Prototype in Operational Environment)** introduces critical engineering challenges modeled and resolved by ReactoN:
 
@@ -47,7 +47,7 @@ Transitioning AWR technology from **TRL 4 (Laboratory-Validated)** to **TRL 5 (S
 
 ---
 
-## 🐍 Python Architecture
+## Python Architecture
 
 ReactoN features a modular, package-based architecture designed for high-performance scientific simulations and SCADA integration:
 
@@ -83,7 +83,7 @@ ReactoN/
 
 ---
 
-## 🚀 Current Status (May 2026)
+## Current Status (May 2026)
 
 | Milestone | Status | Target |
 |-----------|--------|--------|
@@ -96,7 +96,7 @@ ReactoN/
 
 ---
 
-## 💻 Development Setup (For Contributors)
+## Development Setup (For Contributors)
 
 ```bash
 # Clone repository
@@ -119,7 +119,7 @@ pytest tests/ -v
 
 ---
 
-## 📡 Remote Automation via API
+## Remote Automation via API
 
 ReactoN includes an automated FastAPI service. To start the local server:
 ```bash
@@ -129,7 +129,7 @@ Once started, you can access the interactive OpenAPI documentation at [http://12
 
 ---
 
-## 👥 Authors & Team
+## Authors & Team
 
 **ASRHÜR Kimya ve Makina Sanayi A.Ş.**
 
@@ -144,7 +144,7 @@ Once started, you can access the interactive OpenAPI documentation at [http://12
 
 ---
 
-## 📞 Contact & Support
+## Contact & Support
 
 - **Website:** https://asrhur.com
 - **Email:** invest@asrhur.com | dogukan@asrhur.com
